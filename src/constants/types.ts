@@ -75,6 +75,7 @@ export type CategoryCard = {
   title: string
   href: string
   imageUrl: string
+  carouselImageUrls?: string[]
 }
 
 export type MediaBanner = {
@@ -111,7 +112,6 @@ export type TemplatePage = {
   quickLinks: CategoryCard[]
   newSeason: ProductRail
   brandBanners: MediaBanner[]
-  surfRail: CardSection<ProductCard>
   categoryCollections: CardSection<CategoryCard>
   newsletter: LeadFormConfig
 }

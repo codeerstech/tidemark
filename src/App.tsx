@@ -1,8 +1,11 @@
 import { useEffect, useMemo, useState } from 'react'
 import type { FormEvent, MouseEvent } from 'react'
+import { AnimatePresence, motion } from 'framer-motion'
 import {
   Check,
   ChevronDown,
+  ChevronLeft,
+  ChevronRight,
   CreditCard,
   Heart,
   Landmark,
@@ -51,29 +54,29 @@ const routePaths = new Set<RoutePath>(['/', '/checkout', '/about-us', '/privacy-
 const staticPages: Record<Exclude<RoutePath, '/' | '/checkout'>, StaticPageContent> = {
   '/about-us': {
     metaTitle: `About Us | ${site.brand.name}`,
-    metaDescription: `${site.brand.name} helps customers discover curated products, thoughtful service, and a smoother online shopping experience.`,
+    metaDescription: `${site.brand.name} helps shoppers compare favorite watch brands, trusted sellers, and market-price deals in one place.`,
     eyebrow: 'About us',
     title: `Meet ${site.brand.name}`,
     description:
-      'We bring carefully selected products, clear merchandising, and responsive service together in one polished storefront.',
+      'We bring trusted watch sellers, favorite brands, clear comparisons, and sharp market pricing together in one easy marketplace.',
     sections: [
       {
         title: 'What we do',
-        body: 'Our team curates product collections, keeps shopping paths simple, and helps customers compare options with confidence.',
+        body: 'Our marketplace curates seller listings, organizes products by style and need, and helps shoppers compare options with confidence.',
       },
       {
         title: 'How we serve customers',
-        body: 'We focus on clear product details, helpful updates, and reliable follow-up from the moment a customer shares their details.',
+        body: 'We focus on clear product details, seller-direct discovery, helpful updates, and reliable follow-up from the moment a shopper shares their details.',
       },
       {
         title: 'Our standard',
-        body: 'Every page is designed to feel direct, trustworthy, and easy to use across desktop and mobile screens.',
+        body: 'Every page is designed to make multi-brand watch shopping feel direct, trustworthy, and easy to use across desktop and mobile screens.',
       },
     ],
   },
   '/privacy-policy': {
     metaTitle: `Privacy Policy | ${site.brand.name}`,
-    metaDescription: `${site.brand.name} privacy policy for customer enquiries, newsletter submissions, and website usage data.`,
+    metaDescription: `${site.brand.name} privacy policy for marketplace enquiries, newsletter submissions, and website usage data.`,
     eyebrow: 'Privacy policy',
     title: 'Privacy Policy',
     description:
@@ -244,24 +247,13 @@ function Header({
                   {group.label}
                   <ChevronDown className="transition-transform group-hover:rotate-180 group-focus-within:rotate-180" size={15} aria-hidden="true" />
                 </button>
-                <div className={`pointer-events-none absolute top-full z-50 hidden w-[min(760px,calc(100vw-64px))] pt-3 group-hover:block group-hover:pointer-events-auto group-focus-within:block group-focus-within:pointer-events-auto ${panelAlignment}`} data-nav-menu={group.label}>
-                  <div className="relative grid overflow-hidden rounded-[var(--radius-card)] border border-[var(--color-line)] bg-[var(--color-surface)] shadow-[var(--shadow-drawer)] ring-1 ring-black/5 lg:grid-cols-[270px_1fr]">
-                    <div className="bg-[var(--color-dark)] p-6 text-white">
-                      <p className="text-xs font-black uppercase tracking-[0.22em] text-[var(--color-accent)]">{group.featured ?? 'Featured'}</p>
-                      <h2 className="mt-4 text-2xl font-black leading-tight">{group.label}</h2>
-                      <p className="mt-4 text-sm font-bold leading-6 text-white/70">Browse curated picks, newest arrivals, and useful edits in one quick pass.</p>
-                      <a className="mt-6 inline-flex rounded-[var(--radius-pill)] bg-[var(--color-accent)] px-4 py-2 text-xs font-black uppercase text-[var(--color-dark)]" href={localHref(group.items[0]?.href ?? '#new-season')}>
-                        Shop {group.label}
+                <div className={`pointer-events-none absolute top-full z-50 hidden w-64 pt-2 group-hover:block group-hover:pointer-events-auto group-focus-within:block group-focus-within:pointer-events-auto ${panelAlignment}`} data-nav-menu={group.label}>
+                  <div className="overflow-hidden rounded-[var(--radius-card)] border border-[var(--color-line)] bg-[var(--color-surface)] p-2 shadow-[var(--shadow-card)] ring-1 ring-black/5">
+                    {group.items.map((item) => (
+                      <a className="block rounded-[var(--radius-control)] px-3 py-2.5 text-sm font-black text-[var(--color-heading)] hover:bg-[var(--color-surface-soft)] hover:text-[var(--color-dark)]" href={localHref(item.href)} key={item.href}>
+                        {item.label}
                       </a>
-                    </div>
-                    <div className="grid gap-2 p-4 sm:grid-cols-2">
-                      {group.items.map((item) => (
-                        <a className="group/item flex min-h-14 items-center justify-between gap-4 rounded-[var(--radius-control)] border border-transparent px-4 py-3 text-sm font-black text-[var(--color-heading)] hover:border-[var(--color-line)] hover:bg-[var(--color-surface-soft)]" href={localHref(item.href)} key={item.href}>
-                          <span>{item.label}</span>
-                          <ChevronDown className="-rotate-90 text-[var(--color-accent)] opacity-0 transition-opacity group-hover/item:opacity-100" size={16} aria-hidden="true" />
-                        </a>
-                      ))}
-                    </div>
+                    ))}
                   </div>
                 </div>
               </div>
@@ -317,15 +309,138 @@ function Header({
 }
 
 function CategoryLink({ item }: { item: CategoryCard }) {
+  const carouselImageUrls = item.carouselImageUrls?.filter(Boolean) ?? []
+  const [carouselIndex, setCarouselIndex] = useState(() =>
+    carouselImageUrls.length > 1 ? Math.floor(Math.random() * carouselImageUrls.length) : 0,
+  )
+  const [transitionEnabled, setTransitionEnabled] = useState(true)
+  const initialDelay = useMemo(() => Math.random() * 2000, [item.title])
+
+  useEffect(() => {
+    if (carouselImageUrls.length <= 1) return undefined
+
+    let timeout: number
+    let cancelled = false
+
+    function scheduleNextChange(isFirstChange = false) {
+      const delay = isFirstChange ? initialDelay : 2000
+
+      timeout = window.setTimeout(() => {
+        setTransitionEnabled(true)
+        setCarouselIndex((index) => index + 1)
+
+        if (!cancelled) scheduleNextChange()
+      }, delay)
+    }
+
+    scheduleNextChange(true)
+
+    return () => {
+      cancelled = true
+      window.clearTimeout(timeout)
+    }
+  }, [carouselImageUrls.length, initialDelay])
+
+  const slideImageUrls = carouselImageUrls.length > 0 ? carouselImageUrls : [item.imageUrl]
+  const visibleSlideIndex = slideImageUrls.length > 1 ? carouselIndex % slideImageUrls.length : 0
+  const swipeImageUrls = slideImageUrls.length > 1 ? [...slideImageUrls, slideImageUrls[0]] : slideImageUrls
+
   return (
-    <a className="group min-w-[168px] flex-1 overflow-hidden rounded-[var(--radius-card)] border border-[var(--color-line)] bg-[var(--color-surface)] shadow-[var(--shadow-card)]" href={localHref(item.href)}>
-      <div className="aspect-square overflow-hidden">
-        <ImageFrame imageUrl={item.imageUrl} title={item.title} />
+    <a className="group flex-[0_0_190px] overflow-hidden rounded-[var(--radius-card)] border border-[var(--color-line)] bg-[var(--color-surface)] shadow-[var(--shadow-card)] hover:border-[var(--color-accent)] sm:flex-[0_0_216px]" href={localHref(item.href)}>
+      <div className="relative aspect-square overflow-hidden bg-[var(--color-surface-soft)]">
+        {slideImageUrls.length > 1 ? (
+          <motion.div
+            className="flex h-full w-full"
+            animate={{ x: `${carouselIndex * -100}%` }}
+            transition={transitionEnabled ? { duration: 0.55, ease: [0.22, 1, 0.36, 1] } : { duration: 0 }}
+            onAnimationComplete={() => {
+              if (carouselIndex >= slideImageUrls.length) {
+                setTransitionEnabled(false)
+                setCarouselIndex(0)
+                window.requestAnimationFrame(() => setTransitionEnabled(true))
+              }
+            }}
+          >
+            {swipeImageUrls.map((imageUrl, index) => (
+              <div className="h-full flex-[0_0_100%]" key={`${item.title}-${imageUrl}-${index}`}>
+                <ImageFrame imageUrl={imageUrl} title={item.title} />
+              </div>
+            ))}
+          </motion.div>
+        ) : (
+          <ImageFrame imageUrl={slideImageUrls[0] ?? ''} title={item.title} />
+        )}
+        {slideImageUrls.length > 1 ? (
+          <div className="absolute bottom-3 left-1/2 z-10 flex -translate-x-1/2 items-center gap-1.5 rounded-[var(--radius-pill)] bg-black/32 px-2.5 py-1.5 backdrop-blur-sm" aria-label={`${item.title} image ${visibleSlideIndex + 1} of ${slideImageUrls.length}`}>
+            {slideImageUrls.map((imageUrl, index) => (
+              <span
+                className={`h-1.5 rounded-full transition-all duration-300 ${index === visibleSlideIndex ? 'w-5 bg-white' : 'w-1.5 bg-white/55'}`}
+                key={`${item.title}-${imageUrl}-${index}`}
+                aria-hidden="true"
+              />
+            ))}
+          </div>
+        ) : null}
       </div>
-      <span className="block px-4 py-3 text-center text-sm font-black uppercase text-[var(--color-heading)] group-hover:bg-[var(--color-dark)] group-hover:text-white">
+      <span className="block border-t border-[var(--color-line)] bg-[var(--color-surface)] px-4 py-3 text-center text-sm font-black uppercase text-[var(--color-heading)] group-hover:border-[var(--color-accent-soft)] group-hover:bg-[var(--color-accent-soft)]">
         {item.title}
       </span>
     </a>
+  )
+}
+
+function QuickLinksCarousel({ items }: { items: CategoryCard[] }) {
+  const [startIndex, setStartIndex] = useState(0)
+  const [direction, setDirection] = useState(1)
+  const orderedItems = useMemo(
+    () => items.map((_, index) => items[(startIndex + index) % items.length]).filter(Boolean),
+    [items, startIndex],
+  )
+
+  if (items.length === 0) return null
+
+  function move(nextDirection: number) {
+    setDirection(nextDirection)
+    setStartIndex((index) => (index + nextDirection + items.length) % items.length)
+  }
+
+  return (
+    <section className="mx-auto w-[min(var(--container),calc(100%-32px))] py-8">
+      <div className="relative">
+        <button
+          className="absolute left-0 top-1/2 z-10 grid h-11 w-11 -translate-y-1/2 place-items-center rounded-full border border-[var(--color-line)] bg-[var(--color-surface)] text-[var(--color-heading)] shadow-[var(--shadow-card)] hover:bg-[var(--color-dark)] hover:text-white"
+          type="button"
+          onClick={() => move(-1)}
+          aria-label="Previous category"
+        >
+          <ChevronLeft size={20} aria-hidden="true" />
+        </button>
+        <div className="overflow-hidden px-12">
+          <AnimatePresence initial={false} mode="wait">
+            <motion.div
+              className="flex gap-4"
+              key={startIndex}
+              initial={{ opacity: 0.88, x: direction > 0 ? 28 : -28 }}
+              animate={{ opacity: 1, x: 0 }}
+              exit={{ opacity: 0.88, x: direction > 0 ? -28 : 28 }}
+              transition={{ duration: 0.28, ease: 'easeOut' }}
+            >
+              {orderedItems.map((item) => (
+                <CategoryLink item={item} key={item.title} />
+              ))}
+            </motion.div>
+          </AnimatePresence>
+        </div>
+        <button
+          className="absolute right-0 top-1/2 z-10 grid h-11 w-11 -translate-y-1/2 place-items-center rounded-full border border-[var(--color-line)] bg-[var(--color-surface)] text-[var(--color-heading)] shadow-[var(--shadow-card)] hover:bg-[var(--color-dark)] hover:text-white"
+          type="button"
+          onClick={() => move(1)}
+          aria-label="Next category"
+        >
+          <ChevronRight size={20} aria-hidden="true" />
+        </button>
+      </div>
+    </section>
   )
 }
 
@@ -443,8 +558,14 @@ function ProductRail({
 
 function MediaBannerView({ banner }: { banner: MediaBanner }) {
   return (
-    <section className={`${banner.dark ? 'bg-[var(--color-dark)] text-white' : 'bg-[var(--color-surface)] text-[var(--color-heading)]'} py-16`}>
-      <div className="mx-auto grid w-[min(var(--container),calc(100%-32px))] items-center gap-10 lg:grid-cols-[1.1fr_0.9fr]">
+    <section className={`${banner.dark ? 'bg-[var(--color-dark)] text-white' : 'bg-[var(--color-surface)] text-[var(--color-heading)]'} relative overflow-hidden py-16`}>
+      {banner.dark && banner.imageUrl ? (
+        <div className="absolute inset-0 opacity-30" aria-hidden="true">
+          <ImageFrame imageUrl={banner.imageUrl} title={banner.title} dark />
+        </div>
+      ) : null}
+      <div className="absolute inset-0 bg-[linear-gradient(90deg,var(--color-dark)_0%,rgba(16,44,39,0.84)_48%,rgba(16,44,39,0.42)_100%)]" aria-hidden="true" />
+      <div className="relative mx-auto grid min-h-[460px] w-[min(var(--container),calc(100%-32px))] items-center gap-10 lg:grid-cols-[1.1fr_0.9fr]">
         <div>
           <p className={`mb-3 text-xs font-black uppercase tracking-[0.22em] ${banner.dark ? 'text-[var(--color-accent)]' : 'text-[var(--color-muted)]'}`}>{banner.eyebrow}</p>
           <h2 className="text-4xl font-black leading-tight md:text-6xl">{banner.title}</h2>
@@ -453,9 +574,7 @@ function MediaBannerView({ banner }: { banner: MediaBanner }) {
             {banner.cta.label}
           </a>
         </div>
-        <div className="overflow-hidden rounded-[var(--radius-card)] border border-white/15">
-          <ImageFrame imageUrl={banner.imageUrl} title={banner.title} dark={banner.dark} />
-        </div>
+        <div className="hidden lg:block" aria-hidden="true" />
       </div>
     </section>
   )
@@ -1009,7 +1128,7 @@ export default function App() {
   const [cart, setCart] = useState<CartItem[]>([])
   const cssVars = useMemo(() => themeStyle(), [])
   const allProducts = useMemo(
-    () => [...page.newSeason.tabs.flatMap((tab) => tab.products), ...page.surfRail.items],
+    () => page.newSeason.tabs.flatMap((tab) => tab.products),
     [],
   )
   const wishlistProducts = allProducts.filter((product) => wishlist.has(product.id))
@@ -1184,13 +1303,7 @@ export default function App() {
           </div>
         </section>
 
-        <section className="mx-auto w-[min(var(--container),calc(100%-32px))] py-8">
-          <div className="flex gap-4 overflow-x-auto pb-3">
-            {page.quickLinks.map((item) => (
-              <CategoryLink item={item} key={item.title} />
-            ))}
-          </div>
-        </section>
+        <QuickLinksCarousel items={page.quickLinks} />
 
         <ProductRail
           wishlist={wishlist}
@@ -1201,21 +1314,6 @@ export default function App() {
         {page.brandBanners.map((banner) => (
           <MediaBannerView banner={banner} key={banner.title} />
         ))}
-
-        <section id="surf" className="mx-auto w-[min(var(--container),calc(100%-32px))] py-16">
-          <SectionIntro eyebrow={page.surfRail.eyebrow} title={page.surfRail.title} description={page.surfRail.description} cta={page.surfRail.cta} />
-          <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-4">
-            {page.surfRail.items.map((product) => (
-              <ProductCardView
-                key={product.id}
-                product={product}
-                wished={wishlist.has(product.id)}
-                onAddToCart={() => addToCart(product)}
-                onToggleWishlist={() => toggleWishlist(product.id)}
-              />
-            ))}
-          </div>
-        </section>
 
         <section id="categories" className="bg-[var(--color-surface)] py-16">
           <div className="mx-auto w-[min(var(--container),calc(100%-32px))]">

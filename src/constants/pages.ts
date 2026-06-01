@@ -1,5 +1,5 @@
 import { assets } from './assets'
-import type { ProductCard, TemplatePage } from './types'
+import type { CategoryCard, ProductCard, TemplatePage } from './types'
 
 const mensProducts: ProductCard[] = [
   {
@@ -67,105 +67,97 @@ const womensProducts: ProductCard[] = [
   },
 ]
 
+const quickLinks: CategoryCard[] = [
+  {
+    title: "Women's Watches",
+    href: '#new-season',
+    imageUrl: assets.categories.womens,
+    carouselImageUrls: [assets.categories.womens, assets.categories.womensAlt],
+  },
+  {
+    title: 'Analog Watches',
+    href: '#categories',
+    imageUrl: assets.categories.analog,
+    carouselImageUrls: [assets.categories.analog, assets.categories.analogAlt],
+  },
+  {
+    title: 'Digital Watches',
+    href: '#categories',
+    imageUrl: assets.categories.digital,
+    carouselImageUrls: [assets.categories.digital, assets.categories.digitalAlt],
+  },
+  {
+    title: 'Custom Watches',
+    href: '#categories',
+    imageUrl: assets.categories.custom,
+    carouselImageUrls: [assets.categories.custom, assets.categories.customAlt],
+  },
+  {
+    title: 'Solar Watches',
+    href: '#new-season',
+    imageUrl: assets.categories.solar,
+    carouselImageUrls: [assets.categories.solar, assets.categories.solarAlt],
+  },
+  { title: 'Watch Bands', href: '#categories', imageUrl: assets.categories.bands },
+]
+
 export const page: TemplatePage = {
   meta: {
-    title: 'TideMark Supply',
-    description: 'Watch storefront with working cart, wishlist, checkout, and live newsletter capture.',
+    title: 'TideMark Seller Portal',
+    description: 'Multi-brand watch marketplace with curated sellers, easy comparison, wishlist, checkout, and market-price deals.',
   },
   announcements: [
-    'Free engraving through this week',
-    'Free shipping on orders over $100',
-    'Sign up for 15% off your first order',
+    'Compare favorite watch brands in one place',
+    'Seller-direct picks at sharp market prices',
+    'Sign up for deal alerts and launch drops',
   ],
   hero: {
-    eyebrow: 'Perfect gifts for grads',
-    title: 'Time keeps going',
-    subtitle: 'From timeless daily watches to fresh sport designs, give them the gift that stays with them.',
-    cta: { label: 'Shop Graduation Gifts', href: '#new-season' },
+    eyebrow: 'Multi-brand watch marketplace',
+    title: 'Favorite watch brands, one place',
+    subtitle: 'TideMark makes it easy to compare trusted sellers, discover styles across brands, and buy at sharp market prices.',
+    cta: { label: 'Shop Market Deals', href: '#new-season' },
     imageUrl: assets.heroImageUrl,
   },
-  quickLinks: [
-    { title: "Women's Watches", href: '#new-season', imageUrl: assets.categories.womens },
-    { title: 'Analog Watches', href: '#categories', imageUrl: assets.categories.analog },
-    { title: 'Digital Watches', href: '#categories', imageUrl: assets.categories.digital },
-    { title: 'Custom Watches', href: '#categories', imageUrl: assets.categories.custom },
-    { title: 'Surf & Tide Watches', href: '#surf', imageUrl: assets.categories.surf },
-    { title: 'Watch Bands', href: '#categories', imageUrl: assets.categories.bands },
-    { title: 'Headwear', href: '#categories', imageUrl: assets.categories.headwear },
-  ],
+  quickLinks,
   newSeason: {
-    eyebrow: 'New this season',
-    title: 'Fresh colorways and new takes on iconic watch styles',
-    description: 'Tabbed product rails keep men’s and women’s merchandising in one scan-friendly section.',
-    cta: { label: 'View all', href: '#new-season' },
+    eyebrow: 'Seller-picked deals',
+    title: 'Compare standout watches from trusted sellers',
+    description: 'Browse cross-brand drops, verified seller picks, and price-conscious finds without hopping between stores.',
+    cta: { label: 'View Deals', href: '#new-season' },
     items: mensProducts,
     tabs: [
       {
         label: "Men's",
-        description: 'Discover the latest men’s watches built for wherever the day takes you.',
+        description: 'Compare men’s watches from multiple sellers, styles, and price points in one quick view.',
         products: mensProducts,
       },
       {
         label: "Women's",
-        description: 'Meet new styles and standout colors designed to elevate every look.',
+        description: 'Find women’s watches across favorite brands, from everyday analog styles to polished gift picks.',
         products: womensProducts,
       },
     ],
   },
   brandBanners: [
     {
-      eyebrow: 'Since 1998',
-      title: 'TideMark watches are built for the chaos. Designed to own it.',
+      eyebrow: 'Marketplace promise',
+      title: 'Your favorite watch brands, brought together at the best market price.',
       description:
-        'A full-width brand banner supports lifestyle video, founder story, team riders, or campaign editorial.',
-      cta: { label: 'Shop Best Sellers', href: '#new-season' },
+        'TideMark connects shoppers with trusted sellers, clear comparisons, and a faster path to the right watch.',
+      cta: { label: 'Shop Seller Picks', href: '#new-season' },
       imageUrl: assets.brandVideoPosterUrl,
       dark: true,
     },
   ],
-  surfRail: {
-    eyebrow: 'Time to paddle out',
-    title: 'Surf & tide watches',
-    description:
-      'Collection rails can reuse the same product card structure with different category copy and merchandising.',
-    cta: { label: 'Shop Surf & Tide Watches', href: '#surf' },
-    items: [
-      {
-        id: 'heat',
-        title: 'Heat',
-        category: 'Training',
-        price: '$175',
-        rating: '4.2 / 5',
-        reviewCount: 557,
-        badges: [],
-        imageUrl: assets.products.heat,
-      },
-      {
-        id: 'high-tide',
-        title: 'High Tide',
-        category: 'Tide',
-        price: '$250',
-        rating: '4.6 / 5',
-        reviewCount: 222,
-        badges: ['Tide'],
-        imageUrl: assets.products.highTide,
-      },
-    ],
-  },
   categoryCollections: {
-    eyebrow: 'Shop by category',
-    title: 'Dense, image-led category navigation',
-    description: 'The same card structure works for styles, colors, materials, sizes, accessories, and gifts.',
-    items: [
-      { title: "Men's Watches", href: '#new-season', imageUrl: assets.categories.analog },
-      { title: "Women's Watches", href: '#new-season', imageUrl: assets.categories.womens },
-      { title: 'Custom Watches', href: '#categories', imageUrl: assets.categories.custom },
-      { title: 'Bands', href: '#categories', imageUrl: assets.categories.bands },
-    ],
+    eyebrow: 'Browse by need',
+    title: 'Find the right watch across brands',
+    description: 'Women’s, analog, digital, custom, solar, and bands are grouped for faster marketplace discovery.',
+    items: quickLinks,
   },
   newsletter: {
-    title: 'Get 15% off your first order',
-    description: 'A compact sign-up block for offer capture, launches, and gift campaigns.',
+    title: 'Get market deal alerts',
+    description: 'Join for seller drops, price updates, and new brand arrivals from the TideMark marketplace.',
     emailPlaceholder: 'you@example.com',
     submitLabel: 'Sign Up',
   },

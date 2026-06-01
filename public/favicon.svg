@@ -1,6 +1,9 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" viewBox="0 0 64 64" role="img" aria-label="CareAxis Cloud">
-  <rect width="64" height="64" rx="14" fill="#fff2e5"/>
-  <rect x="14" y="14" width="36" height="36" rx="10" fill="#bf5708"/>
-  <rect x="21" y="28" width="22" height="8" rx="3" fill="#fff"/>
-  <rect x="28" y="21" width="8" height="22" rx="3" fill="#fff"/>
+<svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" viewBox="0 0 64 64" role="img" aria-label="TideMark Seller Portal">
+  <rect width="64" height="64" rx="15" fill="#102c27"/>
+  <path d="M25 6h14l-3 11h-8L25 6Z" fill="#c79a3c"/>
+  <path d="M28 47h8l3 11H25l3-11Z" fill="#c79a3c"/>
+  <circle cx="32" cy="32" r="17" fill="#f4f1ea" stroke="#c79a3c" stroke-width="4"/>
+  <circle cx="32" cy="32" r="2.8" fill="#102c27"/>
+  <path d="M32 20v12l8 6" fill="none" stroke="#102c27" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/>
+  <path d="M21 18l4 4M43 18l-4 4M21 46l4-4M43 46l-4-4" stroke="#102c27" stroke-width="2.5" stroke-linecap="round"/>
 </svg>

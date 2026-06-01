@@ -2,7 +2,7 @@ import type { NavGroup } from './types'
 
 export const site = {
   brand: {
-    name: 'TideMark Supply',
+    name: 'TideMark Seller Portal',
     shortName: 'TideMark',
   },
   utilityLinks: [
@@ -11,30 +11,30 @@ export const site = {
     { label: 'Sign in', href: '#signin' },
   ],
   countries: ['United States', 'Canada', 'United Kingdom', 'Australia', 'Germany', 'France'],
-  footer: '© 2026 TideMark Supply. Working watch storefront with live newsletter capture.',
+  footer: '© 2026 TideMark Seller Portal. Multi-brand watch marketplace with live checkout, wishlist, and newsletter capture.',
 }
 
 export const navGroups: NavGroup[] = [
   {
-    label: 'Watches',
-    featured: 'Shop by style',
+    label: 'Marketplace',
+    featured: 'Compare top picks',
     items: [
-      { label: 'New Arrivals', href: '#new-season' },
-      { label: 'Best Sellers', href: '#new-season' },
+      { label: 'Market Deals', href: '#new-season' },
+      { label: 'Best Market Price', href: '#new-season' },
       { label: 'Analog', href: '#categories' },
       { label: 'Digital', href: '#categories' },
       { label: 'Chronograph', href: '#categories' },
-      { label: 'Water Resistant', href: '#surf' },
+      { label: 'Water Resistant', href: '#categories' },
     ],
   },
   {
-    label: 'Featured Collections',
-    featured: 'Icons and collaborations',
+    label: 'Featured Brands',
+    featured: 'Seller-curated styles',
     items: [
-      { label: 'Icons', href: '#new-season' },
+      { label: 'Popular Brands', href: '#new-season' },
       { label: 'Custom Watches', href: '#categories' },
-      { label: 'Engraved Watches', href: '#new-season' },
-      { label: 'Gift Guide', href: '#newsletter' },
+      { label: 'Verified Sellers', href: '#new-season' },
+      { label: 'Deal Alerts', href: '#newsletter' },
     ],
   },
   {
@@ -45,15 +45,6 @@ export const navGroups: NavGroup[] = [
       { label: 'Rubber', href: '#categories' },
       { label: 'Stainless Steel', href: '#categories' },
       { label: 'Nylon', href: '#categories' },
-    ],
-  },
-  {
-    label: 'Headwear & More',
-    featured: 'Accessories',
-    items: [
-      { label: 'Headwear', href: '#categories' },
-      { label: 'Apparel', href: '#categories' },
-      { label: 'Bags & Accessories', href: '#categories' },
     ],
   },
 ]

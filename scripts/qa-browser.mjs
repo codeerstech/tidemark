@@ -36,7 +36,7 @@ for (const viewport of viewports) {
   }
   if (!metrics.h1 || metrics.bodyLength < 500) failures.push(`${viewport.name}: sparse render`)
   if (!metrics.title || !metrics.description) failures.push(`${viewport.name}: missing route metadata`)
-  if (metrics.placeholders < 8) failures.push(`${viewport.name}: expected empty-image placeholders to render`)
+  if (metrics.placeholders < 4) failures.push(`${viewport.name}: expected fallback image placeholders to render`)
 
   if (viewport.name === 'desktop') {
     await page.getByRole('button', { name: 'Featured Collections' }).hover()
