@@ -1,0 +1,6 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" viewBox="0 0 64 64" role="img" aria-label="CareAxis Cloud">
+  <rect width="64" height="64" rx="14" fill="#fff2e5"/>
+  <rect x="14" y="14" width="36" height="36" rx="10" fill="#bf5708"/>
+  <rect x="21" y="28" width="22" height="8" rx="3" fill="#fff"/>
+  <rect x="28" y="21" width="8" height="22" rx="3" fill="#fff"/>
+</svg>

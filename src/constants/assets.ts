@@ -1,0 +1,25 @@
+export const assets = {
+  logoUrl: '',
+  heroImageUrl: '',
+  brandVideoPosterUrl: '',
+  surfBannerUrl: '',
+  products: {
+    ocoSilver: '',
+    ocoBlack: '',
+    sentryGreen: '',
+    chronoLeather: '',
+    timeTellerGold: '',
+    eddyBlue: '',
+    heat: '',
+    highTide: '',
+  },
+  categories: {
+    womens: '',
+    analog: '',
+    digital: '',
+    custom: '',
+    surf: '',
+    bands: '',
+    headwear: '',
+  },
+}
