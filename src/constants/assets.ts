@@ -1,6 +1,6 @@
 export const assets = {
   logoUrl: '',
-  heroImageUrl: '',
+  heroImageUrl: 'https://images.pexels.com/photos/9213725/pexels-photo-9213725.jpeg?w=600',
   brandVideoPosterUrl: '',
   surfBannerUrl: '',
   products: {

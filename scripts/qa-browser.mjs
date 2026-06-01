@@ -38,6 +38,16 @@ for (const viewport of viewports) {
   if (!metrics.title || !metrics.description) failures.push(`${viewport.name}: missing route metadata`)
   if (metrics.placeholders < 8) failures.push(`${viewport.name}: expected empty-image placeholders to render`)
 
+  if (viewport.name === 'desktop') {
+    await page.getByRole('button', { name: 'Featured Collections' }).hover()
+    const navMenu = page.locator('[data-nav-menu="Featured Collections"]')
+    await navMenu.waitFor({ state: 'visible' }).catch(() => failures.push('desktop nav: dropdown did not open on hover'))
+    const navMenuBox = await navMenu.boundingBox()
+    if (!navMenuBox || navMenuBox.x < -1 || navMenuBox.x + navMenuBox.width > viewport.width + 1) {
+      failures.push('desktop nav: dropdown overflows viewport')
+    }
+  }
+
   if (viewport.name === 'mobile') {
     await page.getByLabel('Open navigation').click()
     const mobileLinkVisible = await page.locator('a[href="/#new-season"]', { hasText: 'New Arrivals' }).last().isVisible()

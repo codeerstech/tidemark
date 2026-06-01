@@ -230,27 +230,43 @@ function Header({
         </a>
 
         <nav className="hidden flex-1 items-center justify-center gap-1 lg:flex" aria-label="Primary navigation">
-          {navGroups.map((group) => (
-            <div className="group relative" key={group.label}>
-              <button className="inline-flex items-center gap-1 rounded-[var(--radius-control)] px-4 py-3 text-sm font-black uppercase text-[var(--color-heading)] hover:bg-[var(--color-surface-soft)]" type="button">
-                {group.label}
-                <ChevronDown size={15} aria-hidden="true" />
-              </button>
-              <div className="pointer-events-none absolute left-1/2 top-full grid w-[660px] -translate-x-1/2 translate-y-2 grid-cols-[0.8fr_1.2fr] gap-5 rounded-[var(--radius-card)] border border-[var(--color-line)] bg-[var(--color-surface)] p-5 opacity-0 shadow-[var(--shadow-card)] transition group-hover:pointer-events-auto group-hover:translate-y-0 group-hover:opacity-100">
-                <div className="rounded-[var(--radius-card)] bg-[var(--color-dark)] p-5 text-white">
-                  <p className="text-xs font-black uppercase tracking-[0.22em] text-[var(--color-accent)]">{group.featured ?? 'Featured'}</p>
-                  <h2 className="mt-3 text-2xl font-black">{group.label}</h2>
-                </div>
-                <div className="grid grid-cols-2 gap-2">
-                  {group.items.map((item) => (
-                    <a className="rounded-[var(--radius-control)] px-3 py-2 text-sm font-bold text-[var(--color-muted)] hover:bg-[var(--color-surface-soft)] hover:text-[var(--color-heading)]" href={localHref(item.href)} key={item.href}>
-                      {item.label}
-                    </a>
-                  ))}
+          {navGroups.map((group, index) => {
+            const panelAlignment =
+              index === 0
+                ? 'left-0 translate-x-0'
+                : index === navGroups.length - 1
+                  ? 'right-0 translate-x-0'
+                  : 'left-1/2 -translate-x-1/2'
+
+            return (
+              <div className="group relative" key={group.label}>
+                <button className="inline-flex items-center gap-1 rounded-[var(--radius-control)] px-4 py-3 text-sm font-black uppercase text-[var(--color-heading)] hover:bg-[var(--color-surface-soft)] group-focus-within:bg-[var(--color-surface-soft)]" type="button" aria-haspopup="true">
+                  {group.label}
+                  <ChevronDown className="transition-transform group-hover:rotate-180 group-focus-within:rotate-180" size={15} aria-hidden="true" />
+                </button>
+                <div className={`pointer-events-none absolute top-full z-50 hidden w-[min(760px,calc(100vw-64px))] pt-3 group-hover:block group-hover:pointer-events-auto group-focus-within:block group-focus-within:pointer-events-auto ${panelAlignment}`} data-nav-menu={group.label}>
+                  <div className="relative grid overflow-hidden rounded-[var(--radius-card)] border border-[var(--color-line)] bg-[var(--color-surface)] shadow-[var(--shadow-drawer)] ring-1 ring-black/5 lg:grid-cols-[270px_1fr]">
+                    <div className="bg-[var(--color-dark)] p-6 text-white">
+                      <p className="text-xs font-black uppercase tracking-[0.22em] text-[var(--color-accent)]">{group.featured ?? 'Featured'}</p>
+                      <h2 className="mt-4 text-2xl font-black leading-tight">{group.label}</h2>
+                      <p className="mt-4 text-sm font-bold leading-6 text-white/70">Browse curated picks, newest arrivals, and useful edits in one quick pass.</p>
+                      <a className="mt-6 inline-flex rounded-[var(--radius-pill)] bg-[var(--color-accent)] px-4 py-2 text-xs font-black uppercase text-[var(--color-dark)]" href={localHref(group.items[0]?.href ?? '#new-season')}>
+                        Shop {group.label}
+                      </a>
+                    </div>
+                    <div className="grid gap-2 p-4 sm:grid-cols-2">
+                      {group.items.map((item) => (
+                        <a className="group/item flex min-h-14 items-center justify-between gap-4 rounded-[var(--radius-control)] border border-transparent px-4 py-3 text-sm font-black text-[var(--color-heading)] hover:border-[var(--color-line)] hover:bg-[var(--color-surface-soft)]" href={localHref(item.href)} key={item.href}>
+                          <span>{item.label}</span>
+                          <ChevronDown className="-rotate-90 text-[var(--color-accent)] opacity-0 transition-opacity group-hover/item:opacity-100" size={16} aria-hidden="true" />
+                        </a>
+                      ))}
+                    </div>
+                  </div>
                 </div>
               </div>
-            </div>
-          ))}
+            )
+          })}
         </nav>
 
         <div className="ml-auto flex items-center gap-2">
@@ -1142,12 +1158,12 @@ export default function App() {
         <section className="relative overflow-hidden bg-[var(--color-dark)] text-white">
           <div className="absolute inset-0">
             {page.hero.imageUrl ? (
-              <ImageFrame imageUrl={page.hero.imageUrl} title={page.hero.title} dark className="opacity-55" />
+              <ImageFrame imageUrl={page.hero.imageUrl} title={page.hero.title} dark className="opacity-80" />
             ) : (
               <div className="h-full w-full bg-[linear-gradient(135deg,var(--color-dark),var(--color-dark-soft))]" aria-hidden="true" />
             )}
           </div>
-          <div className="absolute inset-0 bg-[linear-gradient(90deg,var(--color-dark)_0%,rgba(16,44,39,0.86)_42%,rgba(16,44,39,0.18)_100%)]" aria-hidden="true" />
+          <div className="absolute inset-0 bg-[linear-gradient(90deg,rgba(16,44,39,0.74)_0%,rgba(16,44,39,0.52)_42%,rgba(16,44,39,0.08)_100%)]" aria-hidden="true" />
           <div className="relative mx-auto grid min-h-[640px] w-[min(var(--container),calc(100%-32px))] items-center gap-8 py-16 lg:grid-cols-[minmax(0,0.95fr)_360px]">
             <div className="max-w-3xl">
               <p className="mb-3 text-xs font-black uppercase tracking-[0.24em] text-[var(--color-accent)]">{page.hero.eyebrow}</p>
