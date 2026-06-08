@@ -1,18 +1,24 @@
 import { useEffect, useMemo, useState } from 'react'
 import type { FormEvent, MouseEvent } from 'react'
+import useEmblaCarousel from 'embla-carousel-react'
 import { AnimatePresence, motion } from 'framer-motion'
 import {
   Check,
   ChevronDown,
   ChevronLeft,
   ChevronRight,
+  Clock,
   CreditCard,
   Heart,
   Landmark,
+  Mail,
   MapPin,
   Menu,
   Minus,
+  PackageCheck,
+  Phone,
   Plus,
+  ShieldCheck,
   Smartphone,
   ShoppingBag,
   Star,
@@ -31,11 +37,20 @@ type CartItem = {
   quantity: number
 }
 
-type RoutePath = '/' | '/checkout' | '/about-us' | '/privacy-policy'
+type RoutePath = '/' | '/checkout' | '/about-us' | '/contact-us' | '/privacy-policy'
 
 type CheckoutField = 'fullName' | 'email' | 'phone' | 'address' | 'city' | 'state' | 'postalCode' | 'country'
 
 type CheckoutDetails = Record<CheckoutField, string>
+
+type CheckoutStepId = 'address' | 'payment' | 'confirmation'
+
+type FeedbackMessage = {
+  id: number
+  tone: 'cart' | 'wishlist'
+  title: string
+  message: string
+}
 
 type StaticPageContent = {
   metaTitle: string
@@ -49,28 +64,50 @@ type StaticPageContent = {
   }>
 }
 
-const routePaths = new Set<RoutePath>(['/', '/checkout', '/about-us', '/privacy-policy'])
+const routePaths = new Set<RoutePath>(['/', '/checkout', '/about-us', '/contact-us', '/privacy-policy'])
 
 const staticPages: Record<Exclude<RoutePath, '/' | '/checkout'>, StaticPageContent> = {
   '/about-us': {
     metaTitle: `About Us | ${site.brand.name}`,
     metaDescription: `${site.brand.name} helps shoppers compare favorite watch brands, trusted sellers, and market-price deals in one place.`,
     eyebrow: 'About us',
-    title: `Meet ${site.brand.name}`,
+    title: 'Built for watch shoppers who compare before they commit',
     description:
-      'We bring trusted watch sellers, favorite brands, clear comparisons, and sharp market pricing together in one easy marketplace.',
+      'TideMark brings seller-direct watch listings into a calmer marketplace: clear product context, visible price math, and a support path that does not disappear after checkout.',
     sections: [
       {
-        title: 'What we do',
-        body: 'Our marketplace curates seller listings, organizes products by style and need, and helps shoppers compare options with confidence.',
+        title: 'Marketplace first',
+        body: 'We organize analog, digital, solar, custom, and band listings around the decisions buyers actually make: style, material, seller trust, and total delivered price.',
       },
       {
-        title: 'How we serve customers',
-        body: 'We focus on clear product details, seller-direct discovery, helpful updates, and reliable follow-up from the moment a shopper shares their details.',
+        title: 'Seller-direct follow-through',
+        body: 'Customers can save products, compare listings, and reach support before or after placing an order. Seller teams get a focused path for listing questions and fulfilment updates.',
       },
       {
-        title: 'Our standard',
-        body: 'Every page is designed to make multi-brand watch shopping feel direct, trustworthy, and easy to use across desktop and mobile screens.',
+        title: 'Practical by design',
+        body: 'The experience is tuned for repeat comparison rather than one-off browsing, with quick categories, visible totals, wishlist recovery, and checkout confirmation built into the flow.',
+      },
+    ],
+  },
+  '/contact-us': {
+    metaTitle: `Contact Us | ${site.brand.name}`,
+    metaDescription: `${site.brand.name} customer support and seller contact information for watch orders, marketplace listings, and fulfilment help.`,
+    eyebrow: 'Contact us',
+    title: 'Seller and customer support',
+    description:
+      'Reach the TideMark team for order help, seller onboarding, listing questions, and marketplace support. We route messages by queue so buyers and sellers reach the right team faster.',
+    sections: [
+      {
+        title: 'Customer support',
+        body: 'Email support@tidemark.example or call +1 (415) 555-0198 for order status, checkout questions, returns, and delivery updates. Support hours are Monday-Friday, 9:00 AM-6:00 PM PT.',
+      },
+      {
+        title: 'Seller desk',
+        body: 'Email sellers@tidemark.example for seller verification, listing corrections, fulfilment coordination, brand documentation, and marketplace pricing questions.',
+      },
+      {
+        title: 'Head office',
+        body: 'TideMark Marketplace Support, 280 Battery Street, Suite 410, San Francisco, CA 94111. For privacy requests, use privacy@tidemark.example.',
       },
     ],
   },
@@ -120,6 +157,10 @@ function projectKey() {
   return site.brand.shortName.toLowerCase().replace(/[^a-z0-9]+/g, '-')
 }
 
+function storageKey(name: string) {
+  return `${projectKey()}-${name}`
+}
+
 function getRoutePath(): RoutePath {
   const path = window.location.pathname as RoutePath
   return routePaths.has(path) ? path : '/'
@@ -150,6 +191,16 @@ function cartTotals(items: CartItem[]) {
     tax,
     delivery,
     total: subtotal + tax + delivery,
+  }
+}
+
+function readStoredJson<T>(key: string, fallback: T): T {
+  if (typeof window === 'undefined') return fallback
+  try {
+    const value = window.localStorage.getItem(key)
+    return value ? (JSON.parse(value) as T) : fallback
+  } catch {
+    return fallback
   }
 }
 
@@ -250,7 +301,7 @@ function Header({
                 <div className={`pointer-events-none absolute top-full z-50 hidden w-64 pt-2 group-hover:block group-hover:pointer-events-auto group-focus-within:block group-focus-within:pointer-events-auto ${panelAlignment}`} data-nav-menu={group.label}>
                   <div className="overflow-hidden rounded-[var(--radius-card)] border border-[var(--color-line)] bg-[var(--color-surface)] p-2 shadow-[var(--shadow-card)] ring-1 ring-black/5">
                     {group.items.map((item) => (
-                      <a className="block rounded-[var(--radius-control)] px-3 py-2.5 text-sm font-black text-[var(--color-heading)] hover:bg-[var(--color-surface-soft)] hover:text-[var(--color-dark)]" href={localHref(item.href)} key={item.href}>
+                      <a className="block rounded-[var(--radius-control)] px-3 py-2.5 text-sm font-black text-[var(--color-heading)] hover:bg-[var(--color-surface-soft)] hover:text-[var(--color-dark)]" href={localHref(item.href)} key={`${group.label}-${item.label}-${item.href}`}>
                         {item.label}
                       </a>
                     ))}
@@ -284,7 +335,7 @@ function Header({
               <summary className="cursor-pointer list-none text-base font-black uppercase text-[var(--color-heading)]">{group.label}</summary>
               <div className="mt-2 grid gap-1">
                 {group.items.map((item) => (
-                  <a className="rounded-[var(--radius-control)] px-3 py-2 font-bold text-[var(--color-muted)]" href={localHref(item.href)} key={item.href} onClick={() => setMobileOpen(false)}>
+                  <a className="rounded-[var(--radius-control)] px-3 py-2 font-bold text-[var(--color-muted)]" href={localHref(item.href)} key={`${group.label}-${item.label}-${item.href}`} onClick={() => setMobileOpen(false)}>
                     {item.label}
                   </a>
                 ))}
@@ -390,19 +441,29 @@ function CategoryLink({ item }: { item: CategoryCard }) {
 }
 
 function QuickLinksCarousel({ items }: { items: CategoryCard[] }) {
-  const [startIndex, setStartIndex] = useState(0)
-  const [direction, setDirection] = useState(1)
-  const orderedItems = useMemo(
-    () => items.map((_, index) => items[(startIndex + index) % items.length]).filter(Boolean),
-    [items, startIndex],
-  )
+  const [emblaRef, emblaApi] = useEmblaCarousel({ align: 'start', dragFree: true, loop: true })
+  const [selectedSnap, setSelectedSnap] = useState(0)
+  const [snapCount, setSnapCount] = useState(0)
+
+  useEffect(() => {
+    if (!emblaApi) return undefined
+
+    const updateCarouselState = () => {
+      setSelectedSnap(emblaApi.selectedScrollSnap())
+      setSnapCount(emblaApi.scrollSnapList().length)
+    }
+
+    updateCarouselState()
+    emblaApi.on('select', updateCarouselState)
+    emblaApi.on('reInit', updateCarouselState)
+
+    return () => {
+      emblaApi.off('select', updateCarouselState)
+      emblaApi.off('reInit', updateCarouselState)
+    }
+  }, [emblaApi])
 
   if (items.length === 0) return null
-
-  function move(nextDirection: number) {
-    setDirection(nextDirection)
-    setStartIndex((index) => (index + nextDirection + items.length) % items.length)
-  }
 
   return (
     <section className="mx-auto w-[min(var(--container),calc(100%-32px))] py-8">
@@ -410,36 +471,41 @@ function QuickLinksCarousel({ items }: { items: CategoryCard[] }) {
         <button
           className="absolute left-0 top-1/2 z-10 grid h-11 w-11 -translate-y-1/2 place-items-center rounded-full border border-[var(--color-line)] bg-[var(--color-surface)] text-[var(--color-heading)] shadow-[var(--shadow-card)] hover:bg-[var(--color-dark)] hover:text-white"
           type="button"
-          onClick={() => move(-1)}
+          onClick={() => emblaApi?.scrollPrev()}
           aria-label="Previous category"
         >
           <ChevronLeft size={20} aria-hidden="true" />
         </button>
-        <div className="overflow-hidden px-12">
-          <AnimatePresence initial={false} mode="wait">
-            <motion.div
-              className="flex gap-4"
-              key={startIndex}
-              initial={{ opacity: 0.88, x: direction > 0 ? 28 : -28 }}
-              animate={{ opacity: 1, x: 0 }}
-              exit={{ opacity: 0.88, x: direction > 0 ? -28 : 28 }}
-              transition={{ duration: 0.28, ease: 'easeOut' }}
-            >
-              {orderedItems.map((item) => (
-                <CategoryLink item={item} key={item.title} />
-              ))}
-            </motion.div>
-          </AnimatePresence>
+        <div className="overflow-hidden px-12" ref={emblaRef}>
+          <div className="flex gap-4">
+            {items.map((item) => (
+              <CategoryLink item={item} key={item.title} />
+            ))}
+          </div>
         </div>
         <button
           className="absolute right-0 top-1/2 z-10 grid h-11 w-11 -translate-y-1/2 place-items-center rounded-full border border-[var(--color-line)] bg-[var(--color-surface)] text-[var(--color-heading)] shadow-[var(--shadow-card)] hover:bg-[var(--color-dark)] hover:text-white"
           type="button"
-          onClick={() => move(1)}
+          onClick={() => emblaApi?.scrollNext()}
           aria-label="Next category"
         >
           <ChevronRight size={20} aria-hidden="true" />
         </button>
       </div>
+      {snapCount > 1 ? (
+        <div className="mt-4 flex justify-center gap-2" aria-label="Category carousel position">
+          {Array.from({ length: snapCount }).map((_, index) => (
+            <button
+              className={`h-2 rounded-full transition-all ${selectedSnap === index ? 'w-7 bg-[var(--color-dark)]' : 'w-2 bg-[var(--color-line)]'}`}
+              type="button"
+              key={`category-snap-${index}`}
+              onClick={() => emblaApi?.scrollTo(index)}
+              aria-label={`Go to category slide ${index + 1}`}
+              aria-current={selectedSnap === index ? 'true' : undefined}
+            />
+          ))}
+        </div>
+      ) : null}
     </section>
   )
 }
@@ -456,10 +522,12 @@ function ProductCardView({
   onToggleWishlist: () => void
 }) {
   return (
-    <article className="relative overflow-hidden rounded-[var(--radius-card)] border border-[var(--color-line)] bg-[var(--color-surface)] shadow-[var(--shadow-card)]">
-      <button className={`absolute right-3 top-3 z-10 grid h-10 w-10 place-items-center rounded-full bg-white/92 ${wished ? 'text-[var(--color-sale)]' : 'text-[var(--color-heading)]'}`} type="button" onClick={onToggleWishlist} aria-label={`${wished ? 'Remove from' : 'Save to'} wishlist ${product.title}`}>
-        <Heart size={18} className={wished ? 'fill-[var(--color-sale)]' : ''} />
-      </button>
+    <motion.article className="relative overflow-hidden rounded-[var(--radius-card)] border border-[var(--color-line)] bg-[var(--color-surface)] shadow-[var(--shadow-card)]" initial={{ opacity: 0.94, y: 10 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true, margin: '-80px' }} transition={{ duration: 0.28, ease: 'easeOut' }}>
+      <motion.button className={`absolute right-3 top-3 z-10 grid h-10 w-10 place-items-center rounded-full bg-white/92 ${wished ? 'text-[var(--color-sale)]' : 'text-[var(--color-heading)]'}`} type="button" onClick={onToggleWishlist} aria-label={`${wished ? 'Remove from' : 'Save to'} wishlist ${product.title}`} whileTap={{ scale: 0.86 }}>
+        <motion.span animate={{ scale: wished ? [1, 1.24, 1] : 1 }} transition={{ duration: 0.3 }}>
+          <Heart size={18} className={wished ? 'fill-[var(--color-sale)]' : ''} />
+        </motion.span>
+      </motion.button>
       <div className="absolute left-3 top-3 z-10 flex flex-wrap gap-2">
         {product.badges.map((badge) => (
           <span className="rounded-[var(--radius-pill)] bg-[var(--color-dark)] px-3 py-1 text-xs font-black uppercase tracking-[0.12em] text-white" key={badge}>
@@ -482,12 +550,12 @@ function ProductCardView({
           <strong className="text-lg font-black text-[var(--color-heading)]">{product.price}</strong>
           {product.compareAt ? <span className="text-sm font-bold text-[var(--color-sale)] line-through">{product.compareAt}</span> : null}
         </div>
-        <button className="mt-5 flex w-full items-center justify-center gap-2 rounded-[var(--radius-pill)] bg-[var(--color-dark)] px-4 py-3 text-sm font-black uppercase text-white" type="button" onClick={onAddToCart}>
+        <motion.button className="mt-5 flex w-full items-center justify-center gap-2 rounded-[var(--radius-pill)] bg-[var(--color-dark)] px-4 py-3 text-sm font-black uppercase text-white" type="button" onClick={onAddToCart} whileTap={{ scale: 0.97 }}>
           <ShoppingBag size={17} />
           Add to Cart
-        </button>
+        </motion.button>
       </div>
-    </article>
+    </motion.article>
   )
 }
 
@@ -602,8 +670,8 @@ function CartDrawer({
   const totals = cartTotals(items)
 
   return (
-    <aside className="fixed inset-0 z-50 bg-black/45" aria-label="Cart drawer">
-      <div className="ml-auto flex h-full w-full max-w-lg flex-col bg-[var(--color-surface)] shadow-[var(--shadow-drawer)]">
+    <aside className="fixed inset-0 z-50 bg-black/45" aria-label="Cart drawer" role="dialog" aria-modal="true">
+      <motion.div className="ml-auto flex h-full w-full max-w-lg flex-col bg-[var(--color-surface)] shadow-[var(--shadow-drawer)]" initial={{ x: 48, opacity: 0.92 }} animate={{ x: 0, opacity: 1 }} transition={{ duration: 0.24, ease: 'easeOut' }}>
         <div className="flex items-center justify-between border-b border-[var(--color-line)] p-5">
           <strong className="text-xl font-black uppercase text-[var(--color-heading)]">Cart</strong>
           <button className="grid h-10 w-10 place-items-center rounded-[var(--radius-control)] border border-[var(--color-line)]" type="button" onClick={onClose} aria-label="Close cart">
@@ -676,7 +744,7 @@ function CartDrawer({
             Checkout
           </button>
         </div>
-      </div>
+      </motion.div>
     </aside>
   )
 }
@@ -697,8 +765,8 @@ function WishlistDrawer({
   if (!open) return null
 
   return (
-    <aside className="fixed inset-0 z-50 bg-black/45" aria-label="Wishlist drawer">
-      <div className="ml-auto flex h-full w-full max-w-lg flex-col bg-[var(--color-surface)] shadow-[var(--shadow-drawer)]">
+    <aside className="fixed inset-0 z-50 bg-black/45" aria-label="Wishlist drawer" role="dialog" aria-modal="true">
+      <motion.div className="ml-auto flex h-full w-full max-w-lg flex-col bg-[var(--color-surface)] shadow-[var(--shadow-drawer)]" initial={{ x: 48, opacity: 0.92 }} animate={{ x: 0, opacity: 1 }} transition={{ duration: 0.24, ease: 'easeOut' }}>
         <div className="flex items-center justify-between border-b border-[var(--color-line)] p-5">
           <strong className="text-xl font-black uppercase text-[var(--color-heading)]">Wishlist</strong>
           <button className="grid h-10 w-10 place-items-center rounded-[var(--radius-control)] border border-[var(--color-line)]" type="button" onClick={onClose} aria-label="Close wishlist">
@@ -748,7 +816,7 @@ function WishlistDrawer({
             ))}
           </div>
         </div>
-      </div>
+      </motion.div>
     </aside>
   )
 }
@@ -796,6 +864,35 @@ function CountrySelector({
           ))}
         </div>
       </div>
+    </div>
+  )
+}
+
+function ActionToast({ feedback }: { feedback: FeedbackMessage | null }) {
+  return (
+    <div className="pointer-events-none fixed bottom-5 left-1/2 z-[60] w-[min(420px,calc(100%-32px))] -translate-x-1/2">
+      <AnimatePresence mode="popLayout">
+        {feedback ? (
+          <motion.div
+            className="flex items-start gap-3 rounded-[var(--radius-card)] border border-[var(--color-line)] bg-[var(--color-surface)] p-4 text-[var(--color-heading)] shadow-[var(--shadow-drawer)]"
+            key={feedback.id}
+            initial={{ opacity: 0, y: 22, scale: 0.96 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            exit={{ opacity: 0, y: 18, scale: 0.98 }}
+            transition={{ duration: 0.22, ease: 'easeOut' }}
+            role="status"
+            aria-live="polite"
+          >
+            <span className={`grid h-10 w-10 shrink-0 place-items-center rounded-full ${feedback.tone === 'cart' ? 'bg-[var(--color-accent)] text-[var(--color-dark)]' : 'bg-red-50 text-[var(--color-sale)]'}`}>
+              {feedback.tone === 'cart' ? <ShoppingBag size={18} aria-hidden="true" /> : <Heart size={18} aria-hidden="true" />}
+            </span>
+            <span>
+              <strong className="block text-sm font-black uppercase">{feedback.title}</strong>
+              <span className="mt-1 block text-sm font-bold text-[var(--color-muted)]">{feedback.message}</span>
+            </span>
+          </motion.div>
+        ) : null}
+      </AnimatePresence>
     </div>
   )
 }
@@ -896,6 +993,125 @@ function StaticPage({ content }: { content: StaticPageContent }) {
   )
 }
 
+function AboutPage() {
+  const content = staticPages['/about-us']
+  const standards = [
+    { label: 'Seller checks', value: 'Verified storefront, fulfilment path, and listing source before products are promoted.' },
+    { label: 'Buyer clarity', value: 'Price, delivery, wishlist, and support touchpoints stay visible through the shopping flow.' },
+    { label: 'Market coverage', value: 'Analog, digital, solar, custom, and band categories are grouped for comparison-first browsing.' },
+  ]
+
+  return (
+    <section className="bg-[var(--color-background)]">
+      <div className="mx-auto grid w-[min(var(--container),calc(100%-32px))] gap-10 py-16 lg:grid-cols-[0.9fr_1.1fr]">
+        <div className="lg:sticky lg:top-32 lg:h-fit">
+          <p className="mb-3 text-xs font-black uppercase tracking-[0.22em] text-[var(--color-muted)]">{content.eyebrow}</p>
+          <h1 className="text-4xl font-black uppercase leading-tight text-[var(--color-heading)] md:text-6xl">{content.title}</h1>
+          <p className="mt-5 text-lg leading-8 text-[var(--color-muted)]">{content.description}</p>
+          <div className="mt-8 grid grid-cols-3 gap-3 border-y border-[var(--color-line)] py-5">
+            {[
+              ['6', 'core categories'],
+              ['3', 'support queues'],
+              ['9%', 'visible tax and delivery'],
+            ].map(([value, label]) => (
+              <div key={label}>
+                <strong className="block text-3xl font-black text-[var(--color-heading)]">{value}</strong>
+                <span className="mt-1 block text-xs font-black uppercase text-[var(--color-muted)]">{label}</span>
+              </div>
+            ))}
+          </div>
+        </div>
+        <div className="grid gap-5">
+          <div className="rounded-[var(--radius-card)] bg-[var(--color-dark)] p-6 text-white shadow-[var(--shadow-card)]">
+            <p className="text-xs font-black uppercase tracking-[0.22em] text-[var(--color-accent)]">How TideMark works</p>
+            <div className="mt-6 grid gap-4 sm:grid-cols-3">
+              {standards.map((standard, index) => (
+                <article className="border-t border-white/18 pt-4" key={standard.label}>
+                  <span className="grid h-9 w-9 place-items-center rounded-full bg-[var(--color-accent)] text-sm font-black text-[var(--color-dark)]">{index + 1}</span>
+                  <h2 className="mt-4 text-lg font-black">{standard.label}</h2>
+                  <p className="mt-2 text-sm leading-6 text-white/70">{standard.value}</p>
+                </article>
+              ))}
+            </div>
+          </div>
+          <div className="grid gap-5 md:grid-cols-3">
+            {content.sections.map((section) => (
+              <article className="rounded-[var(--radius-card)] border border-[var(--color-line)] bg-[var(--color-surface)] p-5 shadow-[var(--shadow-card)]" key={section.title}>
+                <h2 className="text-xl font-black text-[var(--color-heading)]">{section.title}</h2>
+                <p className="mt-3 text-sm leading-6 text-[var(--color-muted)]">{section.body}</p>
+              </article>
+            ))}
+          </div>
+          <div className="flex flex-wrap items-center justify-between gap-4 rounded-[var(--radius-card)] border border-[var(--color-line)] bg-[var(--color-surface)] p-5">
+            <p className="max-w-xl font-bold text-[var(--color-muted)]">Questions about a seller, listing, or checkout total can go straight to the TideMark support team.</p>
+            <a className="inline-flex rounded-[var(--radius-pill)] bg-[var(--color-dark)] px-5 py-3 text-sm font-black uppercase text-white" href="/contact-us">
+              Contact Support
+            </a>
+          </div>
+        </div>
+      </div>
+    </section>
+  )
+}
+
+function ContactPage() {
+  const content = staticPages['/contact-us']
+  const contacts = [
+    { title: 'Customer support', detail: 'support@tidemark.example', subtext: 'Orders, checkout, delivery, returns', icon: Mail },
+    { title: 'Seller desk', detail: 'sellers@tidemark.example', subtext: 'Verification, listings, fulfilment', icon: ShieldCheck },
+    { title: 'Phone support', detail: '+1 (415) 555-0198', subtext: 'Monday-Friday, 9:00 AM-6:00 PM PT', icon: Phone },
+  ]
+
+  return (
+    <section className="bg-[var(--color-background)] py-16">
+      <div className="mx-auto w-[min(var(--container),calc(100%-32px))]">
+        <div className="grid gap-10 lg:grid-cols-[0.85fr_1.15fr]">
+          <div>
+            <p className="mb-3 text-xs font-black uppercase tracking-[0.22em] text-[var(--color-muted)]">{content.eyebrow}</p>
+            <h1 className="text-4xl font-black uppercase leading-tight text-[var(--color-heading)] md:text-6xl">{content.title}</h1>
+            <p className="mt-5 text-lg leading-8 text-[var(--color-muted)]">{content.description}</p>
+          </div>
+          <div className="grid gap-4 md:grid-cols-3">
+            {contacts.map(({ title, detail, subtext, icon: Icon }) => (
+              <article className="rounded-[var(--radius-card)] border border-[var(--color-line)] bg-[var(--color-surface)] p-5 shadow-[var(--shadow-card)]" key={title}>
+                <Icon className="text-[var(--color-heading)]" size={24} aria-hidden="true" />
+                <h2 className="mt-4 text-lg font-black text-[var(--color-heading)]">{title}</h2>
+                <p className="mt-2 break-words text-sm font-black text-[var(--color-heading)]">{detail}</p>
+                <p className="mt-2 text-sm leading-6 text-[var(--color-muted)]">{subtext}</p>
+              </article>
+            ))}
+          </div>
+        </div>
+        <div className="mt-10 grid gap-5 lg:grid-cols-[1fr_1fr_1fr]">
+          {content.sections.map((section) => (
+            <article className="rounded-[var(--radius-card)] border border-[var(--color-line)] bg-[var(--color-surface)] p-6 shadow-[var(--shadow-card)]" key={section.title}>
+              <h2 className="text-xl font-black text-[var(--color-heading)]">{section.title}</h2>
+              <p className="mt-3 leading-7 text-[var(--color-muted)]">{section.body}</p>
+            </article>
+          ))}
+        </div>
+        <div className="mt-8 grid gap-4 rounded-[var(--radius-card)] bg-[var(--color-dark)] p-6 text-white md:grid-cols-3">
+          {[
+            { label: 'Order response', value: '1 business day', icon: PackageCheck },
+            { label: 'Seller response', value: '2 business days', icon: Clock },
+            { label: 'Privacy queue', value: 'privacy@tidemark.example', icon: ShieldCheck },
+          ].map(({ label, value, icon: Icon }) => (
+            <div className="flex items-center gap-3" key={label}>
+              <span className="grid h-11 w-11 shrink-0 place-items-center rounded-full bg-[var(--color-accent)] text-[var(--color-dark)]">
+                <Icon size={20} aria-hidden="true" />
+              </span>
+              <span>
+                <strong className="block text-sm font-black uppercase text-[var(--color-accent)]">{label}</strong>
+                <span className="mt-1 block font-black">{value}</span>
+              </span>
+            </div>
+          ))}
+        </div>
+      </div>
+    </section>
+  )
+}
+
 function CheckoutPage({
   checkoutDetails,
   items,
@@ -911,19 +1127,50 @@ function CheckoutPage({
   onPaymentMethodChange: (method: string) => void
   paymentMethod: string
 }) {
-  const [checkoutMessage, setCheckoutMessage] = useState('')
+  const [confirmationNumber, setConfirmationNumber] = useState('')
   const totals = cartTotals(items)
   const isAddressComplete = Object.values(checkoutDetails).every((value) => value.trim().length > 0)
+  const isConfirmed = confirmationNumber.length > 0
+  const activeStep: CheckoutStepId = !isAddressComplete ? 'address' : !paymentMethod ? 'payment' : 'confirmation'
+  const checkoutSteps: Array<{
+    id: CheckoutStepId
+    title: string
+    description: string
+    complete: boolean
+  }> = [
+    {
+      id: 'address',
+      title: 'Delivery',
+      description: isAddressComplete ? 'Address complete' : 'Add recipient details',
+      complete: isAddressComplete,
+    },
+    {
+      id: 'payment',
+      title: 'Payment',
+      description: paymentMethod ? 'Method selected' : 'Choose how to pay',
+      complete: Boolean(paymentMethod),
+    },
+    {
+      id: 'confirmation',
+      title: 'Confirmation',
+      description: isConfirmed ? confirmationNumber : 'Place the order',
+      complete: isConfirmed,
+    },
+  ]
   const paymentMethods = [
     { id: 'upi', label: 'UPI', icon: Smartphone },
     { id: 'card', label: 'Card', icon: CreditCard },
     { id: 'netbanking', label: 'Netbanking', icon: Landmark },
   ]
 
+  useEffect(() => {
+    setConfirmationNumber('')
+  }, [checkoutDetails, items, paymentMethod])
+
   function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
     if (!isAddressComplete || !paymentMethod) return
-    setCheckoutMessage('Checkout details saved. Your order is ready for review.')
+    setConfirmationNumber(`TM-${Date.now().toString().slice(-6)}`)
   }
 
   if (items.length === 0) {
@@ -953,6 +1200,57 @@ function CheckoutPage({
             Edit Cart
           </button>
         </div>
+
+        <div className="mb-6 grid gap-3 md:grid-cols-3" aria-label="Checkout progress">
+          {checkoutSteps.map((step, index) => {
+            const isActive = step.id === activeStep && !step.complete
+
+            return (
+              <div
+                className={`rounded-[var(--radius-card)] border p-4 ${
+                  step.complete
+                    ? 'border-[var(--color-dark)] bg-[var(--color-dark)] text-white'
+                    : isActive
+                      ? 'border-[var(--color-accent)] bg-[var(--color-accent-soft)] text-[var(--color-heading)]'
+                      : 'border-[var(--color-line)] bg-[var(--color-surface)] text-[var(--color-heading)]'
+                }`}
+                key={step.id}
+                aria-current={isActive ? 'step' : undefined}
+              >
+                <div className="flex items-center gap-3">
+                  <span className={`grid h-9 w-9 shrink-0 place-items-center rounded-full text-sm font-black ${step.complete ? 'bg-[var(--color-accent)] text-[var(--color-dark)]' : 'bg-white text-[var(--color-heading)]'}`}>
+                    {step.complete ? <Check size={17} aria-hidden="true" /> : index + 1}
+                  </span>
+                  <span>
+                    <strong className="block text-sm font-black uppercase">{step.title}</strong>
+                    <span className={`mt-1 block text-xs font-bold ${step.complete ? 'text-white/70' : 'text-[var(--color-muted)]'}`}>{step.description}</span>
+                  </span>
+                </div>
+              </div>
+            )
+          })}
+        </div>
+
+        {isConfirmed ? (
+          <motion.div className="mb-6 rounded-[var(--radius-card)] border border-[var(--color-accent)] bg-[var(--color-accent-soft)] p-5 text-[var(--color-heading)]" initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} role="status" aria-live="polite">
+            <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+              <div className="flex items-start gap-4">
+                <span className="grid h-12 w-12 shrink-0 place-items-center rounded-full bg-[var(--color-dark)] text-white">
+                  <PackageCheck size={23} aria-hidden="true" />
+                </span>
+                <div>
+                  <h2 className="text-2xl font-black uppercase">Order confirmed</h2>
+                  <p className="mt-2 font-bold text-[var(--color-muted)]">
+                    Confirmation {confirmationNumber} is ready for seller fulfilment. A receipt will be sent to {checkoutDetails.email}.
+                  </p>
+                </div>
+              </div>
+              <a className="inline-flex w-fit rounded-[var(--radius-pill)] bg-[var(--color-dark)] px-5 py-3 text-sm font-black uppercase text-white" href="/contact-us">
+                Need Help?
+              </a>
+            </div>
+          </motion.div>
+        ) : null}
 
         <form className="grid gap-6 lg:grid-cols-[1.05fr_0.95fr]" onSubmit={handleSubmit}>
           <div className="grid gap-6">
@@ -1058,7 +1356,6 @@ function CheckoutPage({
                     type="button"
                     onClick={() => {
                       onPaymentMethodChange(id)
-                      setCheckoutMessage('')
                     }}
                   >
                     <span className="inline-flex items-center gap-3">
@@ -1068,13 +1365,14 @@ function CheckoutPage({
                     {paymentMethod === id ? <Check size={18} aria-hidden="true" /> : null}
                   </button>
                 ))}
-                <button className="mt-2 rounded-[var(--radius-pill)] bg-[var(--color-accent)] px-5 py-4 text-sm font-black uppercase text-[var(--color-dark)] disabled:cursor-not-allowed disabled:opacity-50" type="submit" disabled={!paymentMethod}>
-                  Complete Checkout
+                <button className="mt-2 rounded-[var(--radius-pill)] bg-[var(--color-accent)] px-5 py-4 text-sm font-black uppercase text-[var(--color-dark)] disabled:cursor-not-allowed disabled:opacity-50" type="submit" disabled={!paymentMethod || isConfirmed}>
+                  {isConfirmed ? 'Order Confirmed' : 'Complete Checkout'}
                 </button>
-                {checkoutMessage ? (
-                  <p className="rounded-[var(--radius-control)] bg-[var(--color-surface-soft)] px-4 py-3 text-sm font-black text-[var(--color-heading)]" role="status">
-                    {checkoutMessage}
-                  </p>
+                {isConfirmed ? (
+                  <div className="rounded-[var(--radius-control)] border border-[var(--color-accent)] bg-[var(--color-accent-soft)] px-4 py-3 text-sm font-bold text-[var(--color-heading)]" role="status">
+                    <strong className="block font-black uppercase">Fulfilment queued</strong>
+                    <span className="mt-1 block text-[var(--color-muted)]">Seller support can reference {confirmationNumber} for this checkout.</span>
+                  </div>
                 ) : null}
               </div>
             ) : (
@@ -1124,8 +1422,10 @@ export default function App() {
   const [selectedCountry, setSelectedCountry] = useState(site.countries[0] ?? 'United States')
   const [checkoutDetails, setCheckoutDetails] = useState<CheckoutDetails>(emptyCheckoutDetails)
   const [paymentMethod, setPaymentMethod] = useState('')
+  const [hydrated, setHydrated] = useState(false)
   const [wishlist, setWishlist] = useState<Set<string>>(new Set())
   const [cart, setCart] = useState<CartItem[]>([])
+  const [feedback, setFeedback] = useState<FeedbackMessage | null>(null)
   const cssVars = useMemo(() => themeStyle(), [])
   const allProducts = useMemo(
     () => page.newSeason.tabs.flatMap((tab) => tab.products),
@@ -1133,6 +1433,36 @@ export default function App() {
   )
   const wishlistProducts = allProducts.filter((product) => wishlist.has(product.id))
   const cartCount = cart.reduce((count, item) => count + item.quantity, 0)
+
+  useEffect(() => {
+    const storedCart = readStoredJson<Array<{ id: string; quantity: number }>>(storageKey('cart'), [])
+    const storedWishlist = readStoredJson<string[]>(storageKey('wishlist'), [])
+    const productsById = new Map(allProducts.map((product) => [product.id, product]))
+
+    setCart(
+      storedCart
+        .map((item) => {
+          const product = productsById.get(item.id)
+          return product ? { product, quantity: Math.max(1, item.quantity) } : null
+        })
+        .filter((item): item is CartItem => Boolean(item)),
+    )
+    setWishlist(new Set(storedWishlist.filter((id) => productsById.has(id))))
+    setHydrated(true)
+  }, [allProducts])
+
+  useEffect(() => {
+    if (!hydrated) return
+    window.localStorage.setItem(
+      storageKey('cart'),
+      JSON.stringify(cart.map((item) => ({ id: item.product.id, quantity: item.quantity }))),
+    )
+  }, [cart, hydrated])
+
+  useEffect(() => {
+    if (!hydrated) return
+    window.localStorage.setItem(storageKey('wishlist'), JSON.stringify([...wishlist]))
+  }, [hydrated, wishlist])
 
   useEffect(() => {
     const staticContent = route !== '/' && route !== '/checkout' ? staticPages[route] : null
@@ -1161,12 +1491,33 @@ export default function App() {
     return () => window.removeEventListener('popstate', handlePopState)
   }, [])
 
+  useEffect(() => {
+    if (!feedback) return undefined
+
+    const timer = window.setTimeout(() => setFeedback(null), 2600)
+    return () => window.clearTimeout(timer)
+  }, [feedback])
+
   function toggleWishlist(id: string) {
+    const product = allProducts.find((item) => item.id === id)
+    const title = product?.title ?? 'This watch'
+    const isSaved = wishlist.has(id)
+
     setWishlist((current) => {
       const next = new Set(current)
-      if (next.has(id)) next.delete(id)
-      else next.add(id)
+
+      if (next.has(id)) {
+        next.delete(id)
+      } else {
+        next.add(id)
+      }
       return next
+    })
+    setFeedback({
+      id: Date.now(),
+      tone: 'wishlist',
+      title: isSaved ? 'Removed from wishlist' : 'Saved to wishlist',
+      message: isSaved ? `${title} was removed from saved products.` : `${title} is ready in your wishlist.`,
     })
   }
 
@@ -1179,6 +1530,12 @@ export default function App() {
         )
       }
       return [...current, { product, quantity: 1 }]
+    })
+    setFeedback({
+      id: Date.now(),
+      tone: 'cart',
+      title: 'Added to cart',
+      message: `${product.title} is in your cart.`,
     })
     setCartOpen(true)
   }
@@ -1272,6 +1629,10 @@ export default function App() {
             onCheckoutDetailChange={updateCheckoutDetail}
             onPaymentMethodChange={setPaymentMethod}
           />
+        ) : route === '/about-us' ? (
+          <AboutPage />
+        ) : route === '/contact-us' ? (
+          <ContactPage />
         ) : route === '/' ? (
           <>
         <section className="relative overflow-hidden bg-[var(--color-dark)] text-white">
@@ -1350,7 +1711,7 @@ export default function App() {
               <div key={group.label}>
                 <h3 className="mb-3 text-sm font-black uppercase tracking-[0.18em] text-[var(--color-accent)]">{group.label}</h3>
                 {group.items.slice(0, 4).map((item) => (
-                  <a className="mb-2 block text-sm text-white/72" href={localHref(item.href)} key={item.href}>
+                  <a className="mb-2 block text-sm text-white/72" href={localHref(item.href)} key={`${group.label}-${item.label}-${item.href}`}>
                     {item.label}
                   </a>
                 ))}
@@ -1359,6 +1720,7 @@ export default function App() {
             <div>
               <h3 className="mb-3 text-sm font-black uppercase tracking-[0.18em] text-[var(--color-accent)]">Company</h3>
               <a className="mb-2 block text-sm text-white/72" href="/about-us">About Us</a>
+              <a className="mb-2 block text-sm text-white/72" href="/contact-us">Contact Us</a>
               <a className="mb-2 block text-sm text-white/72" href="/privacy-policy">Privacy Policy</a>
             </div>
           </div>
@@ -1387,6 +1749,7 @@ export default function App() {
         onClose={() => setCountryOpen(false)}
         onSelect={selectCountry}
       />
+      <ActionToast feedback={feedback} />
       <CookieNotice />
     </div>
   )
